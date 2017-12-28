@@ -1,0 +1,235 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>EasyUi.html</title>
+	
+    <meta http-equiv="keywords" content="keyword1,keyword2,keyword3">
+    <meta http-equiv="description" content="this is my page">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css" href="themes/default/easyui.css">
+	<link rel="stylesheet" type="text/css" href="themes/icon.css">
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="jquery.easyui.min.js"></script>
+    <style type="text/css">
+    	body{
+			font-size:12px;
+		}
+    </style>
+	<script type="text/javascript">
+	    /*
+	    	查询
+	    */
+		function queryForm(){
+			var fname = $("input[name='fdName']").val();
+			//ajax=queryFoods?foodname=name的值
+			//easyui所有方法的调用
+			//控件对象.控件名称（'方法名'，'方法参数'）
+			$("#dg").datagrid('load',{
+				foodname:fname	
+			});
+		}
+		/*
+			修改
+		*/
+		function submitUpdateForm(){
+		    var selectedRow=$("#dg").datagrid("getSelected");
+			$("#ff").form('submit',{
+				 url:'updateFood/'+selectedRow.foodid,
+				 success:function(msg){
+				 	 msg=JSON.parse(msg);
+				 	 if(msg.code==1){
+		                 $.messager.alert('提示消息','修改成功');
+		                 $("#w").window('close');
+		                 queryForm();
+		             }else{
+		                 $.messager.alert('提示消息',msg.message);
+		             }
+				 }
+				 
+			});
+		}
+		/*
+			修改重置
+		*/
+		function clearUpdateForm(){
+			var selectedRow=$("#dg").datagrid("getSelected");
+			$("#ff").form('load',selectedRow);
+		}
+		/*
+			新增
+		*/
+		function submitInsertForm(){
+		    var selectedRow=$("#dg").datagrid("getSelected");
+			$("#cc").form('submit',{
+				 url:'saveFood',
+				 success:function(msg){
+				 	 msg=JSON.parse(msg);
+				 	 if(msg.code==1){
+		                 $.messager.alert('提示消息','新增成功');
+		                 $("#s").form('clear');
+		                 $("#s").window('close');
+		                 queryForm();
+		             }else{
+		                 $.messager.alert('提示消息',msg.message);
+		             }
+				 }
+			});
+		}
+		/*
+			新增重置		
+		*/
+		function clearInsertForm(){
+			 $("#s").form('clear');
+		}
+		
+		$(function(){
+           //设置data-options
+           $("#dg").datagrid({
+               rownumbers:true,
+               toolbar:[{
+			      iconCls: 'icon-insert',
+			      text:'新增',
+			      onClick:function(){ 
+			          $("#s").window('open');
+			      }
+				},{
+				  iconCls: 'icon-edit',
+				  text:'修改',
+				   onClick:function(){
+				      var selectedRow=$("#dg").datagrid("getSelected");
+			       	  if(selectedRow==null){
+			         	$.messager.alert('提示','请选择一行数据');
+			         	return;
+			          }
+			          $("#w").window('open');
+			          $("#ff").form('load',selectedRow);		      
+			      }
+				},{
+				  iconCls: 'icon-remove',
+				  text:'删除',
+				  onClick:function(){
+				  	 var ibs = [];
+			          //获取当前选择中的行 
+			         var selectedRow=$("#dg").datagrid("getSelections");
+			         if(selectedRow==null){
+			         	$.messager.alert('提示','请选择一行数据');
+			         	return;
+			         }
+			         for(var i=0;i<selectedRow.length;i++){
+			         	ibs.push(selectedRow[i].foodid);
+			         }
+			         //获取选中行的sid
+			         var foodid=ibs.join(',');
+			         //发起ajax到后台去删除数据
+			         $.ajax({
+			            url:'deleteFood/'+foodid,
+			            method:'POST',
+			            dataType:'json',
+			            data:'_method=delete',			  
+			            success:function(msg){
+			               if(msg.code==1){
+			                  $.messager.alert('提示消息','删除成功');
+			                  queryForm();
+			               }else{
+			                 $.messager.alert('提示',msg.message);
+			              }
+			           }
+			       });   
+			    }
+			}]
+		})
+	})
+		
+	$.fn.datebox.defaults.formatter = function(date){
+		var y = date.getFullYear();
+		var m = date.getMonth()+1;
+		var d = date.getDate();
+		return m+'/'+d+'/'+y;
+	}
+	
+	$.extend($.fn.validatebox.defaults.rules, {    
+	    isnum: {    
+	        validator: function(value,param){    
+	            if(isNaN(value)){
+	            	return false;
+	            }
+	            return true;
+	        },    
+	    }    
+	}); 
+	</script>  	  
+  </head>
+  	
+  <body>
+  	菜品名称：<input class="easyui-textbox" type="text" name="fdName" data-options="required:true"></input>
+  	<a href="javascript:void(0)" class="easyui-linkbutton" onclick="queryForm()">查&nbsp;询</a>
+  	<div style="height: 5px"></div>	
+   	<table id="dg" class="easyui-datagrid" title="波波菜系统" style="width:100%;height:100%"
+		data-options="singleSelect:false,collapsible:true,url:'queryFoods',method:'get',pagination:true,rownumbers:true">
+		<thead>
+			<tr>
+				<th data-options="field:'foodid'" style="width:30%" align="center">菜品编号</th>
+				<th data-options="field:'foodname'"  style="width:40%" align="center">菜品名称</th>
+				<th data-options="field:'price',align:'right'"  style="width:30%" align="center">价格</th>
+			</tr>
+		</thead>
+	</table>
+	
+	
+	<div id="w" class="easyui-window" title="修改信息" data-options="iconCls:'icon-edit',closed:true" style="width:300px;height:180px;padding:5px;">
+		<div class="easyui-layout" data-options="fit:true">
+			<form id="ff" method="post">
+			<input type="hidden" name="_method" value="put"/>
+	    	<table cellpadding="5">
+	    		<tr>
+	    			<td>菜品名:</td>
+	    			<td><input class="easyui-textbox" type="text" name="foodname" data-options="required:true"></input></td>
+	    		</tr>
+	    		<tr>
+	    			<td>价格:</td>
+	    			<td><input class="easyui-textbox" type="text" name="price" data-options="required:true"></input></td>
+	    		</tr>
+	    	</table>
+	    </form>
+	    <div style="text-align:center;padding:5px">
+	    	<a href="javascript:void(0)" class="easyui-linkbutton" onclick="submitUpdateForm()">保存</a>
+	    	<a href="javascript:void(0)" class="easyui-linkbutton" onclick="clearUpdateForm()">重置</a>
+	    </div>
+		</div>
+	</div>
+	
+	
+	<div id="s" class="easyui-window" title="新增信息" data-options="iconCls:'icon-insert',closed:true" style="width:300px;height:300px;padding:5px;">
+		<div class="easyui-layout" data-options="fit:true">
+			<form id="cc" method="post" enctype="multipart/form-data">
+	    	<table cellpadding="5">
+	    		<tr>
+	    			<td>菜品名:</td>
+	    			<td><input class="easyui-textbox" type="text" name="foodname" data-options="required:true,missingMessage:'请输入用户名'"></input></td>
+	    		</tr>
+	    		<tr>
+	    			<td>价格:</td>
+	    			<td><input class="easyui-textbox" type="text" name="price" data-options="required:true"></input></td>
+	    		</tr>
+	    		<tr>
+	    			<td>日期:</td>
+	    			<td><input class="easyui-datebox" type="text" name="bornDate" data-options="required:true,editable:false"></input></td>
+	    		</tr>
+	    		<tr>
+	    			<td>菜系编号:</td>
+	    			<td><input class="easyui-textbox" type="text" name="number" data-options="required:true,invalidMessage:'编码必须是11位的数字',validType:['isnum','length[11,11]']"></input></td>
+	    		</tr>
+	    		<tr>
+	    			<td>上传照片:</td>
+	    			<td><input class="easyui-filebox" name="myImage" data-options="prompt:'要上传的照片'" style="width:100%"></td>
+	    		</tr>
+	    	</table>
+	    </form>
+	    <div style="text-align:center;padding:5px">
+	    	<a href="javascript:void(0)" class="easyui-linkbutton" onclick="submitInsertForm()">保存</a>
+	    	<a href="javascript:void(0)" class="easyui-linkbutton" onclick="clearInsertForm()">重置</a>
+	    </div>
+		</div>
+	</div>
+  </body> 
+</html>
